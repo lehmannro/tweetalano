@@ -137,13 +137,6 @@ class Twitsh
           stfl! :details?, 0
           stfl! :tweets?, 1
         end
-      elsif event == "ESC"
-        if stfl :details? == 1
-          stfl! :details?, 0
-          stfl! :tweets?, 1
-        else
-          break
-        end
 #       else
 #         @timeline << OpenStruct.new(:screenname => "event", :message => event.dump)
       end
