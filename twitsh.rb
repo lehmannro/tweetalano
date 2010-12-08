@@ -1,125 +1,162 @@
-# Copyright 2009 Robert Lehmann
+# Copyright 2009, 2010 Robert Lehmann
 
 require 'stfl'
-require 'rubygems'
-gem 'twitter4r'
-require 'twitter'
+require 'ostruct'
 
-class Twitsh
-  @@LAYOUT = <<EOF
+VERSION = "0.1"
+LAYOUT = <<EOF
 vbox
   @.expand:0
   
-  @style_user_normal:fg=magenta,bg=black,attr=bold
+* title bar
+  hbox .height:1 .border:b
+    @style_normal:fg=black,bg=cyan
+    label text:"twitsh #{VERSION}" .expand:h
+    hbox[tray] tie:r
+* blink does NOT work on defocused terminals
+      label text:"@ " .display[replies?]:0
+        style_normal:fg=blue,bg=cyan,attr=blink
+      label text:"! " .display[direct?]:0
+        style_normal:fg=red,bg=cyan,attr=blink
+      label text:"<" .display[messages?]:1
+        style_normal:fg=black,bg=cyan,attr=dim
   
-  vbox[events]
-    hbox .height:1 .border:b
-      @style_normal:fg=black,bg=cyan
-      label text:"twitsh" .expand:h
-      hbox[tray] tie:r
-        label text:"@" style_normal:fg=blue,bg=cyan,attr=blink .display[replies?]:0
-        label text:"!" style_normal:fg=red,bg=cyan,attr=blink .display[direct?]:0
-  
-  list[tweets] .expand:vh
-    .display[tweets.display]:1 pos[tweets.pos]:0 offset[tweets.offset]:0
-    richtext:1
-    style_normal:fg=white,bg=black
-    style_selected:fg=white,bg=black,attr=bold
+* timeline
+  list[tweets]
+    .expand:v
+    .display[tweets?]:1
+    pos[tweets_pos]:0
+    offset[tweets_offset]:
+    style_selected:bg=magenta,fg=yellow,attr=bold
 
-  textview[details] .expand:vh
-    .display[details.display]:0
-    @style_statuslink_normal:fg=white
-    @style_a_normal:attr=underline
-    @style_b_normal:attr=bold
-    richtext:1
-      listitem text:"<statuslink>"
-      listitem[url] text:"http://twitter.com/username/status/00000000"
-      listitem text:"</>"
-      listitem[user] text:"User: <user>username</> / <longname>User Name</>"
-      listitem text:
-      listitem text:"username composes lorem ipsum."
+* detail view
+  vbox .expand:v
+    .display[details?]:0
+    hbox
+      label text[screenname]:"" style_normal:fg=white,attr=bold
+      label text:" — "
+      label text[name]:""
+    label
+    textview[text] richtext:1 .expand:v
+      style_A_normal:fg=cyan,attr=underline
+      style_H_normal:fg=yellow
+      style_U_normal:fg=magenta,attr=dim
+      style_end:fg=black
+    label text[published]:""
 
-  list[selectuser] .expand:vh
-    .display[selectuser.display]:0 pos[selectuser.pos]:0
-    style_normal:fg=white,bg=black
-    style_selected:fg=white,bg=magenta
-    richtext:1
-      listitem text:"user1"
-      listitem text:"user2"
-  
-  table
-    @.border:t
-    label text[username]:"> " style_normal:attr=dim
-    !input text[shell]: .expand:h modal:1 bind_home:** bind_end:**
-    label text[length]:
+  vbox
+    @style_normal:bg=white,fg=black
+    label text:"public timeline"
+
+* input shell
+  hbox
+* table @.border:t
+    * prompt
+    label text:"> " style_normal:attr=dim
+    !input text[shell]: .expand:h modal:1
+      on_kHOM5:SHOME on_kEND5:SEND
 EOF
-  @@TABS = [:tweets, :details, :selectuser]
 
+class Timeline < Array
+  def initialize app
+    @app = app
+  end
+  def clear
+    super
+    @app.stfl! :tweets, "listitem", :replace_inner
+  end
+  def << tweet
+    push tweet
+    @app.stfl! :tweets, "listitem text:'@#{tweet.screenname} #{tweet.message}'", :append
+  end
+end
+
+class Twitsh
   def initialize
-    @active_tab = @@TABS[0]
-    show_interface
-    @form = Stfl.create @@LAYOUT
-    @twitter = Twitter::Client.new
+    @form = Stfl.create LAYOUT
+    @timeline = Timeline.new self
+    load_timeline
   end
-  
+
   def stfl!(component, value, modify=nil)
-    if modify then @form.modify component, modify, value
-    else @form.set component, value end
+    if modify.nil? then @form.set component.to_s, value.to_s
+    else @form.modify component.to_s, modify.to_s, value.to_s end
   end
-  def stfl(component) @form.get component end
+  def stfl(component) @form.get component.to_s end
 
-
-  def focus_listitem(n=nil) 
-    if n then @form.set(@active_tab.to_s + ".pos", n.to_s)
-    else @form.get(@active_tab.to_s + ".pos").to_i end
-  end
-  def focus_listpage(n) # n is relative for now
-    id = @active_tab.to_s + ".offset"
-    @form.set id, (@form.get(id).to_i + n*@form.get(@active_tab.to_s + ":h").to_i).to_s
-  end
-
-  def show_interface(id=nil)
-    return @active_tab if not id
-    @@TABS.each do |name|
-      @form.set(name.to_s + ".display", name == id ? "1" : "0")
+  def load_timeline #XXX mock
+    tweets = [
+      ["johndoe", "John Doe", "another tweet"],
+      ["foobar", "Foo To The Bar", "im in your code, confusing all your readers"],
+      ["johndoe", "John Doe", "hi there! 1"],
+      ["johndoe", "John Doe", "hi there! 2"],
+      ["twitter", "Twitter API", "api down again.."],
+    ]
+    tweets.each do |name, full, msg|
+      tweet = OpenStruct.new :screenname => name, :name => full, :message => msg
+      @timeline << tweet
     end
-    @active_tab = id
   end
 
-  def notify event, delete=false
-    @form.set(event.to_s + ".display", delete ? "0" : "1")
+  def show_tweet tweet
+    stfl! :tweets?, 0
+    stfl! :details?, 1
+    stfl! :text, "listitem", :replace_inner
+    stfl! :text, "listitem text:\"#{tweet.message}\"", :append
+    stfl! :screenname, "@#{tweet.screenname}"
+    stfl! :name, tweet.name
   end
+
+  def scroll_page n
+    delta = n * ((stfl "tweets:h").to_i - 2) # overlapping
+    stfl! :tweets_pos, [@timeline.length, [0, current_listitem + delta].max].min
+  end
+  def current_listitem() (stfl :tweets_pos).to_i end
 
   def main
     loop do
       event = @form.run(0)
       if event == "^C"
-          break
-      # list navigation
+        break
       elsif event == "DOWN"
-        focus_listitem focus_listitem + 1
+        stfl! :tweets_pos, current_listitem + 1
       elsif event == "UP"
-        focus_listitem [focus_listitem - 1, 0].max
+        stfl! :tweets_pos, [0, current_listitem - 1].max
       elsif event == "SHOME"
-        focus_listitem 0
+        stfl! :tweets_pos, 0
       elsif event == "SEND"
-        focus_listitem @form.get(@active_tab.to_s + ":c").to_i
+        stfl! :tweets_pos, @timeline.length
       elsif event == "PPAGE"
-        focus_listpage -1
+        scroll_page -1
       elsif event == "NPAGE"
-        focus_listpage +1
-      elsif event == "^K"
-        @form.modify("tweets", "append", 'listitem text:"' + @form.get("tweets:c") + '"')
-      elsif event == "^D"
-        @form.modify("tweets", "replace_inner", "listitem")
+        scroll_page +1
+      elsif event == "ENTER"
+        show_tweet @timeline[current_listitem] if stfl :tweets? == 1
+      elsif event == "BACKSPACE"
+        if stfl :details? == 1
+          stfl! :details?, 0
+          stfl! :tweets?, 1
+        end
+      elsif event == "ESC"
+        if stfl :details? == 1
+          stfl! :details?, 0
+          stfl! :tweets?, 1
+        else
+          break
+        end
+#       else
+#         @timeline << OpenStruct.new(:screenname => "event", :message => event.dump)
       end
-    end
-  end
-end
+    end #loop
+  end #main
+end #class
 
 if __FILE__ == $0
   if ARGV.include?"-h" or ARGV.include?"--help"
-    puts :foo
+    puts <<EOF
+twitsh [options]
+
+EOF
   else
     Twitsh.new.main
   end
