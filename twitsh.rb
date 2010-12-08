@@ -11,7 +11,7 @@ vbox
 * title bar
   hbox .height:1 .border:b
     @style_normal:fg=black,bg=cyan
-    label text:"twitsh #{VERSION}" .expand:h
+    label text:"tweetalano #{VERSION}" .expand:h
     hbox[tray] tie:r
 * blink does NOT work on defocused terminals
       label text:"@ " .display[replies?]:0
