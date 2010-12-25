@@ -1,7 +1,11 @@
 # Copyright 2009, 2010 Robert Lehmann
 
+require 'rubygems'
+require 'twitter'
+require 'oauth'
 require 'stfl'
-require 'ostruct'
+require 'xdg'
+require 'yaml'
 
 VERSION = "0.1"
 LAYOUT = <<EOF
@@ -74,6 +78,8 @@ class Twitsh
   def initialize
     @form = Stfl.create LAYOUT
     @timeline = Timeline.new self
+    configure
+    authorize
     load_timeline
   end
 
@@ -83,18 +89,38 @@ class Twitsh
   end
   def stfl(component) @form.get component.to_s end
 
-  def load_timeline #XXX mock
-    tweets = [
-      ["johndoe", "John Doe", "another tweet"],
-      ["foobar", "Foo To The Bar", "im in your code, confusing all your readers"],
-      ["johndoe", "John Doe", "hi there! 1"],
-      ["johndoe", "John Doe", "hi there! 2"],
-      ["twitter", "Twitter API", "api down again.."],
-    ]
-    tweets.each do |name, full, msg|
-      tweet = OpenStruct.new :screenname => name, :name => full, :message => msg
-      @timeline << tweet
+  def configure;
+    path = XDG::Config.find('tweetalano', 'config.yaml') || exit
+    @config = YAML::load_file(path)
+  end
+
+  def authorize;
+    fetch_oauth unless @config.has_key? 'oauth'
+    Twitter.configure do |config|
+      config.consumer_key = @config['consumer']['key']
+      config.consumer_secret = @config['consumer']['secret']
+      config.oauth_token = @config['oauth']['token']
+      config.oauth_token_secret = @config['oauth']['secret']
     end
+  end
+
+  def fetch_oauth;
+    consumer = OAuth::Consumer.new(
+      @config['consumer']['key'], @config['consumer']['secret'], {
+      :site => "http://twitter.com",
+    })
+    request_token = consumer.get_request_token
+    puts request_token.authorize_url
+    pin = STDIN.readline.strip
+    access_token = request_token.get_access_token(:oauth_verifier => pin)
+    @config['oauth'] = {
+      'token' => access_token.token,
+      'secret' => access_token.secret,
+    }
+  end
+
+
+  def load_timeline;
   end
 
   def show_tweet tweet
