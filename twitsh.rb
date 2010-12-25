@@ -22,11 +22,12 @@ vbox
         style_normal:fg=black,bg=cyan,attr=dim
   
 * timeline
-  list[tweets]
-    .expand:v
+  !list[tweets]
+    .expand:v modal:1
     .display[tweets?]:1
     pos[tweets_pos]:0
     offset[tweets_offset]:
+    style_focus:bg=magenta,fg=yellow,attr=bold
     style_selected:bg=magenta,fg=yellow,attr=bold
 
 * detail view
@@ -50,11 +51,9 @@ vbox
 
 * input shell
   hbox
-* table @.border:t
     * prompt
     label text:"> " style_normal:attr=dim
-    !input text[shell]: .expand:h modal:1
-      on_kHOM5:SHOME on_kEND5:SEND
+    input text[shell]: .expand:h modal:1
 EOF
 
 class Timeline < Array
@@ -107,10 +106,6 @@ class Twitsh
     stfl! :name, tweet.name
   end
 
-  def scroll_page n
-    delta = n * ((stfl "tweets:h").to_i - 2) # overlapping
-    stfl! :tweets_pos, [@timeline.length, [0, current_listitem + delta].max].min
-  end
   def current_listitem() (stfl :tweets_pos).to_i end
 
   def main
@@ -118,18 +113,6 @@ class Twitsh
       event = @form.run(0)
       if event == "^C"
         break
-      elsif event == "DOWN"
-        stfl! :tweets_pos, current_listitem + 1
-      elsif event == "UP"
-        stfl! :tweets_pos, [0, current_listitem - 1].max
-      elsif event == "SHOME"
-        stfl! :tweets_pos, 0
-      elsif event == "SEND"
-        stfl! :tweets_pos, @timeline.length
-      elsif event == "PPAGE"
-        scroll_page -1
-      elsif event == "NPAGE"
-        scroll_page +1
       elsif event == "ENTER"
         show_tweet @timeline[current_listitem] if stfl :tweets? == 1
       elsif event == "BACKSPACE"
