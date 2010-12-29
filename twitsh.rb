@@ -13,7 +13,7 @@ vbox
   @.expand:0
   
 * title bar
-  hbox .height:1 .border:b
+  hbox[titlebar] .height:1 .border:b
     @style_normal:fg=black,bg=cyan
     label text:"tweetalano #{VERSION}" .expand:h
     hbox[tray] tie:r
@@ -155,7 +155,8 @@ class Twitsh
     if tweet.text.include? "\n"
       lines = tweet.text.split("\n")
     else
-      lines = tweet.text.scan(/(.{1,79})(?:\s+|$)/).collect{|a| a[0]}
+      width = stfl 'titlebar:w'
+      lines = tweet.text.scan(/(.{1,#{width}})(?:\s+|$)/).collect{|a| a[0]}
     end
     lines.each do |line|
       stfl! :text, "listitem text:#{Stfl.quote(line.strip)}", :append
