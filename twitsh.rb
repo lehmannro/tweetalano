@@ -142,6 +142,10 @@ class Twitsh
 
 
   def load_timeline;
+    # count must be "less than or equal to 200."
+    Twitter.home_timeline({:count => 200}).each do |tweet|
+      @timeline << tweet
+    end
   end
 
   def show_tweet tweet
