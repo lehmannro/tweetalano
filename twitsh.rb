@@ -108,7 +108,8 @@ class Twitsh
   def stfl(component) @form.get component.to_s end
 
   def configure;
-    path = XDG::Config.find('tweetalano', 'config.yaml') || exit
+    path = XDG::Config.find('tweetalano', 'config.yaml') \
+      or fail('$XDG_CONFIG_HOME/tweetalano/config.yaml not found')
     @config = YAML::load_file(path)
   end
 
