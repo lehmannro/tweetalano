@@ -165,7 +165,6 @@ class Twitsh
     stfl! :published, tweet.created_at
   end
 
-  def current_listitem() (stfl :tweets_pos).to_i end
 
   def main
     loop do
@@ -173,14 +172,12 @@ class Twitsh
       if event == "^C"
         break
       elsif event == "ENTER"
-        show_tweet @timeline[current_listitem] if stfl :tweets? == 1
+        show_tweet @timeline[(stfl :tweets_pos).to_i] if stfl :tweets? == 1
       elsif event == "BACKSPACE"
         if stfl :details? == 1
           stfl! :details?, 0
           stfl! :tweets?, 1
         end
-#       else
-#         @timeline << OpenStruct.new(:screenname => "event", :message => event.dump)
       end
     end #loop
   end #main
