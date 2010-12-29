@@ -27,12 +27,15 @@ vbox
   
 * timeline
   !list[tweets]
-    .expand:v modal:1
+    .expand:v modal:1 richtext:1
     .display[tweets?]:1
     pos[tweets_pos]:0
     offset[tweets_offset]:
     style_focus:bg=magenta,fg=yellow,attr=bold
     style_selected:bg=magenta,fg=yellow,attr=bold
+    style_B_normal:attr=bold
+    style_B_selected:bg=magenta,attr=bold
+    style_B_focus:bg=magenta,attr=bold
 
 * detail view
   vbox .expand:v
@@ -63,14 +66,29 @@ EOF
 class Timeline < Array
   def initialize app
     @app = app
+    @width = 1
   end
   def clear
     super
-    @app.stfl! :tweets, "listitem", :replace_inner
+    redraw
+  end
+  def redraw
+    @app.stfl! :tweets, "listitem", :replace_inner # clear
+    each do |tweet| show tweet end
   end
   def << tweet
     push tweet
-    @app.stfl! :tweets, "listitem text:'@#{tweet.screenname} #{tweet.message}'", :append
+    show tweet
+    if @width < tweet.user.screen_name.length
+      @width = tweet.user.screen_name.length
+      redraw
+    end
+  end
+  private
+  def show tweet
+    name = tweet.user.screen_name.ljust @width
+    item = "listitem text:\"@<B>#{name}</> \"#{Stfl.quote(tweet.text)}"
+    @app.stfl!(:tweets, item, :append)
   end
 end
 
@@ -127,9 +145,17 @@ class Twitsh
     stfl! :tweets?, 0
     stfl! :details?, 1
     stfl! :text, "listitem", :replace_inner
-    stfl! :text, "listitem text:\"#{tweet.message}\"", :append
-    stfl! :screenname, "@#{tweet.screenname}"
-    stfl! :name, tweet.name
+    if tweet.text.include? "\n"
+      lines = tweet.text.split("\n")
+    else
+      lines = tweet.text.scan(/(.{1,79})(?:\s+|$)/).collect{|a| a[0]}
+    end
+    lines.each do |line|
+      stfl! :text, "listitem text:#{Stfl.quote(line.strip)}", :append
+    end
+    stfl! :screenname, "@#{tweet.user.screen_name}"
+    stfl! :name, tweet.user.name
+    stfl! :published, tweet.created_at
   end
 
   def current_listitem() (stfl :tweets_pos).to_i end
