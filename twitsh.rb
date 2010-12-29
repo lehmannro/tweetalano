@@ -136,6 +136,8 @@ class Twitsh
       'token' => access_token.token,
       'secret' => access_token.secret,
     }
+    STDERR.puts access_token.token
+    STDERR.puts access_token.secret
   end
 
 
