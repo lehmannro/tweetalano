@@ -50,6 +50,13 @@ vbox
       style_H_normal:fg=yellow
       style_U_normal:fg=magenta,attr=dim
       style_end:fg=black
+    hbox
+      .display[is_reply?]:0
+      label text:"in reply to @"
+      label text[in_reply_to]:
+    hbox
+      label text:"from "
+      label text[source]:
     label text[published]:""
 
   vbox
@@ -163,6 +170,9 @@ class Twitsh
     end
     stfl! :screenname, "@#{tweet.user.screen_name}"
     stfl! :name, tweet.user.name
+    stfl! :source, tweet.source.gsub(/^<a href="(.+?)" rel="nofollow">(.+)<\/a>$/, '\2 (\1)')
+    stfl! :in_reply_to, tweet.in_reply_to_screen_name
+    stfl! :is_reply?, tweet.in_reply_to_user_id ? 1 : 0
     stfl! :published, tweet.created_at
   end
 
