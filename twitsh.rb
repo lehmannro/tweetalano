@@ -50,6 +50,10 @@ vbox
       style_H_normal:fg=yellow
       style_U_normal:fg=magenta,attr=dim
       style_end:fg=black
+    list[links]
+      style_focus:bg=magenta,fg=yellow,attr=bold
+      style_selected:bg=blue,fg=yellow,attr=bold
+    label
     hbox
       .display[is_reply?]:0
       label text:"in reply to @"
@@ -150,7 +154,8 @@ class Twitsh
 
   def load_timeline;
     # count must be "less than or equal to 200."
-    Twitter.home_timeline({:count => 200}).each do |tweet|
+    Twitter.home_timeline({:count => 200,
+                           :include_entities => 1}).each do |tweet|
       @timeline << tweet
     end
   end
@@ -174,6 +179,17 @@ class Twitsh
     stfl! :in_reply_to, tweet.in_reply_to_screen_name
     stfl! :is_reply?, tweet.in_reply_to_user_id ? 1 : 0
     stfl! :published, tweet.created_at
+
+    stfl! :links, "listitem", :replace_inner
+    tweet.entities.urls.each do |ref|
+      stfl! :links, "listitem text:#{Stfl.quote(ref.url)}", :append
+    end
+    tweet.entities.hashtags.each do |tag|
+      stfl! :links, "listitem text:\"#\"#{Stfl.quote(tag.text)}", :append
+    end
+    tweet.entities.user_mentions.each do |mention|
+      stfl! :links, "listitem text:\"@\"#{Stfl.quote(mention.screen_name)}", :append
+    end
   end
 
 
