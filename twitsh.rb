@@ -93,9 +93,10 @@ class Timeline < Array
   end
   private
   def show tweet
-    name = tweet.user.screen_name.ljust @width
+    name = tweet.user.screen_name
+    name = name.ljust @width if @app.config['indent_names']
     item = "listitem text:\"@<B>#{name}</> \"#{Stfl.quote(tweet.text)}"
-    @app.stfl!(:tweets, item, :append)
+    @app.stfl! :tweets, item, :append
   end
 end
 
