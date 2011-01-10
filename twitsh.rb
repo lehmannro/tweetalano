@@ -62,7 +62,7 @@ vbox
 
   vbox
     @style_normal:bg=white,fg=black
-    label text:"public timeline"
+    label text[help]:""
 
 * input shell, prompt
   hbox
@@ -174,6 +174,7 @@ class Twitsh
     end
     @form.run(-1)
     redraw
+    close
   end
 
   def show_tweet tweet
@@ -207,6 +208,20 @@ class Twitsh
     show_tweet @timeline[(stfl :tweets_pos).to_i]
   end
 
+  def open
+    stfl! :help, "BACKSPACE:Close"
+    stfl! :links?, 1
+    stfl! :source?, 1
+    @form.run(-1)
+    focus :links
+  end
+  def close
+    stfl! :help, "ENTER:Open"
+    stfl! :links?, 0
+    stfl! :source?, 0
+    focus :tweets
+  end
+
   def main
     loop do
       event = @form.run(0)
@@ -215,14 +230,9 @@ class Twitsh
       elsif event == ""
         redraw
       elsif event == "BACKSPACE"
-        stfl! :links?, 0
-        stfl! :source?, 0
-        focus :tweets
+        close
       elsif event == "ENTER"
-        stfl! :links?, 1
-        stfl! :source?, 1
-        @form.run(-1)
-        focus :links
+        open
       end
     end #loop
   end #main
