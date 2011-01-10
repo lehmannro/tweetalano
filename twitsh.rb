@@ -26,7 +26,7 @@ vbox
         style_normal:fg=black,bg=cyan,attr=dim
   
 * timeline
-  !list[tweets]
+  list[tweets]
     .expand:v modal:1 richtext:1
     .display[tweets?]:1
     pos[tweets_pos]:0
@@ -38,26 +38,26 @@ vbox
     style_B_focus:bg=magenta,attr=bold
 
 * detail view
-  vbox .expand:v
-    .display[details?]:0
-    hbox
-      label text[screenname]:"" style_normal:fg=white,attr=bold
-      label text:" — "
-      label text[name]:""
-    label
-    textview[text] richtext:1 .expand:v
-      style_A_normal:fg=cyan,attr=underline
-      style_H_normal:fg=yellow
-      style_U_normal:fg=magenta,attr=dim
-      style_end:fg=black
+  vbox
+    .display[details?]:1
+    table @.border:t @.expand:h
+      textview[text] richtext:1
+        style_A_normal:fg=cyan,attr=underline
+        style_H_normal:fg=yellow
+        style_U_normal:fg=magenta,attr=dim
+        style_end:fg=black
     list[links]
+      .display[links?]:0
       style_focus:bg=magenta,fg=yellow,attr=bold
       style_selected:bg=blue,fg=yellow,attr=bold
-    label
     hbox
-      .display[is_reply?]:0
-      label text:"in reply to @"
-      label text[in_reply_to]:
+      label text[name]:""
+      label text:" — "
+      label text[screenname]:"" style_normal:fg=white,attr=bold
+*    hbox
+*      .display[is_reply?]:0
+*      label text:"in reply to @"
+*      label text[in_reply_to]:
     hbox
       label text:"from "
       label text[source]:
@@ -158,11 +158,13 @@ class Twitsh
                            :include_entities => 1}).each do |tweet|
       @timeline << tweet
     end
+    @form.run(-1)
+    show_current_tweet
   end
 
   def show_tweet tweet
-    stfl! :tweets?, 0
-    stfl! :details?, 1
+#     stfl! :tweets?, 0
+#     stfl! :details?, 1
     stfl! :text, "listitem", :replace_inner
     if tweet.text.include? "\n"
       lines = tweet.text.split("\n")
@@ -190,7 +192,13 @@ class Twitsh
     tweet.entities.user_mentions.each do |mention|
       stfl! :links, "listitem text:\"@\"#{Stfl.quote(mention.screen_name)}", :append
     end
+#     @form.run(-1)
+#     @form.set_focus 'links'
   end
+  def show_current_tweet
+    show_tweet @timeline[(stfl :tweets_pos).to_i]
+  end
+
 
 
   def main
@@ -198,14 +206,10 @@ class Twitsh
       event = @form.run(0)
       if event == "^C"
         break
+      elsif event == ""
+        show_current_tweet
       elsif event == "ENTER"
-        show_tweet @timeline[(stfl :tweets_pos).to_i] if stfl :tweets? == 1
-      elsif event == "BACKSPACE"
-        if stfl :details? == 1
-          stfl! :details?, 0
-          stfl! :tweets?, 1
-        end
-      end
+          stfl! :links?, 1
     end #loop
   end #main
 end #class
