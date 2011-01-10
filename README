@@ -4,7 +4,7 @@ INSTALLING
 At the moment the process of installing is a bit long-winded.
 
 - You have to have Ruby and gems installed.
-- Via gem you have to install twitter, oauth and xdg.
+- Via gem you have to install twitter, oauth, xdg, stfl and yaml.
 
 - Now you have to register a new application on http://www.twitter.com/apps.
   Note:
