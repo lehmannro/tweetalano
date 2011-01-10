@@ -100,10 +100,25 @@ class Timeline < Array
   end
 end
 
+class Entities < Array
+  def initialize app
+    @app = app
+  end
+  def clear
+    super
+    @app.stfl! :links, "listitem", :replace_inner # clear
+  end
+  def << link
+    super link
+    @app.stfl! :links, "listitem text:#{Stfl.quote(link)}", :append
+  end
+end
+
 class Twitsh
   def initialize
     @form = Stfl.create LAYOUT
     @timeline = Timeline.new self
+    @entities = Entities.new self
     configure
     authorize
     load_timeline
@@ -178,13 +193,13 @@ class Twitsh
 
     stfl! :links, "listitem", :replace_inner
     tweet.entities.urls.each do |ref|
-      stfl! :links, "listitem text:#{Stfl.quote(ref.url)}", :append
+      @entities << ref.url
     end
     tweet.entities.hashtags.each do |tag|
-      stfl! :links, "listitem text:\"#\"#{Stfl.quote(tag.text)}", :append
+      @entities << "##{tag.text}"
     end
     tweet.entities.user_mentions.each do |mention|
-      stfl! :links, "listitem text:\"@\"#{Stfl.quote(mention.screen_name)}", :append
+      @entities << "@#{mention.screen_name}"
     end
   end
   def redraw
