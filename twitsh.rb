@@ -52,7 +52,7 @@ vbox
       style_focus:bg=blue,fg=yellow,attr=bold
     hbox
       label text[name]:""
-      label text:" — "
+      label text:" — @"
       label text[screenname]:"" style_normal:fg=white,attr=bold
     hbox
       .display[source?]:0
@@ -170,7 +170,7 @@ class Twitsh
     lines.each do |line|
       stfl! :text, "listitem text:#{Stfl.quote(line.strip)}", :append
     end
-    stfl! :screenname, "@#{tweet.user.screen_name}"
+    stfl! :screenname, tweet.user.screen_name
     stfl! :name, tweet.user.name
     stfl! :source, tweet.source.gsub(/^<a href="(.+?)" rel="nofollow">(.+)<\/a>$/, '\2 (\1)')
     stfl! :published, tweet.created_at
