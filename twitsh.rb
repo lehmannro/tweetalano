@@ -37,15 +37,16 @@ vbox
     style_B_selected:bg=magenta,attr=bold
     style_B_focus:bg=magenta,attr=bold
 
-* detail view
+* message view
+  table @.border:t @.expand:h
+    textview[text] richtext:1
+      style_A_normal:fg=cyan,attr=underline
+      style_H_normal:fg=yellow
+      style_U_normal:fg=magenta,attr=dim
+      style_end:fg=black
+
   vbox
     .display[details?]:1
-    table @.border:t @.expand:h
-      textview[text] richtext:1
-        style_A_normal:fg=cyan,attr=underline
-        style_H_normal:fg=yellow
-        style_U_normal:fg=magenta,attr=dim
-        style_end:fg=black
     list[links]
       .display[links?]:0
       style_focus:bg=magenta,fg=yellow,attr=bold
@@ -159,12 +160,10 @@ class Twitsh
       @timeline << tweet
     end
     @form.run(-1)
-    show_current_tweet
+    redraw
   end
 
   def show_tweet tweet
-#     stfl! :tweets?, 0
-#     stfl! :details?, 1
     stfl! :text, "listitem", :replace_inner
     if tweet.text.include? "\n"
       lines = tweet.text.split("\n")
@@ -192,14 +191,10 @@ class Twitsh
     tweet.entities.user_mentions.each do |mention|
       stfl! :links, "listitem text:\"@\"#{Stfl.quote(mention.screen_name)}", :append
     end
-#     @form.run(-1)
-#     @form.set_focus 'links'
   end
-  def show_current_tweet
+  def redraw
     show_tweet @timeline[(stfl :tweets_pos).to_i]
   end
-
-
 
   def main
     loop do
@@ -207,9 +202,12 @@ class Twitsh
       if event == "^C"
         break
       elsif event == ""
-        show_current_tweet
+        redraw
       elsif event == "ENTER"
           stfl! :links?, 1
+#           @form.run(-1)
+#           @form.set_focus 'links'
+      end
     end #loop
   end #main
 end #class
