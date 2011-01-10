@@ -131,6 +131,7 @@ class Twitsh
   def stfl(component) @form.get component.to_s end
   def focus(component) @form.set_focus component.to_s end
 
+  def config() @config end
   def configure;
     path = XDG::Config.find('tweetalano', 'config.yaml') \
       or fail("#{XDG::Config.home}/tweetalano/config.yaml not found")
