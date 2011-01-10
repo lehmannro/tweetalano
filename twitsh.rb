@@ -22,7 +22,7 @@ vbox
         style_normal:fg=blue,bg=cyan,attr=blink
       label text:"! " .display[direct?]:0
         style_normal:fg=red,bg=cyan,attr=blink
-      label text:"<" .display[messages?]:1
+      label text:"<" .display[messages?]:0
         style_normal:fg=black,bg=cyan,attr=dim
   
 * timeline
