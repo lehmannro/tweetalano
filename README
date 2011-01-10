@@ -1,0 +1,41 @@
+INSTALLING
+----------
+
+At the moment the process of installing is a bit long-winded.
+
+- You have to have Ruby and gems installed.
+- Via gem you have to install twitter, oauth and xdg.
+
+- Now you have to register a new application on http://www.twitter.com/apps.
+  Note:
+    Application Type: Client
+    Default Access type: Read & Write
+
+- You will get a consumer key and a consumer secret out of that.
+  Save those in a file called <HOME-CONFIG-DIR>/tweetalano/config.yaml like that:
+
+    consumer:
+        key: "<YOUR-KEY>"
+        secret: "<YOUR-SECRET>"
+
+- Now you can start tweetalano for the first time!!1! (Whhoooo)
+  It will offer you an url that you have to go to in order to authenticate the
+  application against twitter. The website will give you a key that you have to
+  enter to tweetalano.You will get an oauth token and an oauth secret back from
+  tweetalano.
+
+- Add oauth token an secret again to <HOME-CONFIG-DIR>/tweetalano/config.yaml
+  so that it looks like this:
+    
+    consumer:
+        key: "<YOUR-CUSTOMER-KEY>"
+        secret: "<YOUR-CUSTOMER-SECRET>"
+    oauth:
+        token: "<YOUR-OAUTH-TOKEN>"
+        secret: "<YOUR-OAUTH-SECRET>"
+
+  Note that it is very helpful to pipe stderr to a file in order to save the
+  oauth token and secret, because tweetalano will start finally after entering
+  the code from the website.
+
+- Have much fun using tweetalano!!1!
