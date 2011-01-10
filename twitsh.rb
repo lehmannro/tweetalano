@@ -1,4 +1,4 @@
-# Copyright 2009, 2010 Robert Lehmann
+# Copyright 2009, 2010, 2011 Robert Lehmann
 
 require 'rubygems'
 require 'twitter'
