@@ -7,6 +7,8 @@ require 'stfl'
 require 'xdg'
 require 'yaml'
 
+module Tweetalano
+
 VERSION = "0.1"
 LAYOUT = <<EOF
 vbox
@@ -115,7 +117,7 @@ class Entities < Array
   end
 end
 
-class Twitsh
+class App
   def initialize
     @form = Stfl.create LAYOUT
     @timeline = Timeline.new self
@@ -239,6 +241,8 @@ class Twitsh
   end #main
 end #class
 
+end #module
+
 if __FILE__ == $0
   if ARGV.include?"-h" or ARGV.include?"--help"
     puts <<EOF
@@ -246,6 +250,6 @@ twitsh [options]
 
 EOF
   else
-    Twitsh.new.main
+    Tweetalano::App.new.main
   end
 end
