@@ -6,6 +6,7 @@ require 'oauth'
 require 'stfl'
 require 'xdg'
 require 'yaml'
+require 'launchy'
 
 module Tweetalano
 
@@ -50,6 +51,7 @@ vbox
   vbox
     list[links]
       modal:1
+      pos[links_pos]:0
       .display[links?]:0
       style_focus:bg=blue,fg=yellow,attr=bold
     hbox
@@ -111,9 +113,18 @@ class Entities < Array
     super
     @app.stfl! :links, "listitem", :replace_inner # clear
   end
-  def << link
-    super link
-    @app.stfl! :links, "listitem text:#{Stfl.quote(link)}", :append
+  def << item
+    super item
+    @app.stfl! :links, "listitem text:#{Stfl.quote(item)}", :append
+  end
+  def run index
+    item = self[index]
+    if item.match /^@/
+      item.slice! 0
+      @app.load_timeline item
+    else
+      Launchy.open(item)
+    end
   end
 end
 
@@ -169,10 +180,18 @@ class App
   end
 
 
-  def load_timeline;
+  def load_timeline(user=nil)
     # count must be "less than or equal to 200."
-    Twitter.home_timeline({:count => 200,
-                           :include_entities => 1}).each do |tweet|
+    @timeline.clear
+    options = {:include_rts => 1,
+               :include_entities => 1,
+               :count => 200}
+    if user
+      timeline = Twitter.user_timeline(user, options)
+    else
+      timeline = Twitter.home_timeline(options)
+    end
+    timeline.each do |tweet|
       @timeline << tweet
     end
     @form.run(-1)
@@ -235,7 +254,11 @@ class App
       elsif event == "BACKSPACE" or event == "ESC"
         close
       elsif event == "ENTER"
-        open
+        if stfl :links? == "0"
+          open
+        else
+          @entities.run((stfl :links_pos).to_i)
+        end
       end
     end #loop
   end #main
