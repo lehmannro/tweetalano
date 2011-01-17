@@ -215,7 +215,7 @@ class App
     stfl! :source, tweet.source.gsub(/^<a href="(.+?)" rel="nofollow">(.+)<\/a>$/, '\2 (\1)')
     stfl! :published, tweet.created_at
 
-    stfl! :links, "listitem", :replace_inner
+    @entities.clear
     tweet.entities.urls.each do |ref|
       @entities << ref.url
     end
