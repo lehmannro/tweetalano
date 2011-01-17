@@ -73,10 +73,11 @@ EOF
 class Timeline < Array
   def initialize app
     @app = app
-    @width = 1
   end
   def clear
     super
+    @app.stfl! :tweets_pos, 0
+    @width = 1
     redraw
   end
   def redraw
