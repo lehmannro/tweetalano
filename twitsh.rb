@@ -228,11 +228,11 @@ class App
   def main
     loop do
       event = @form.run(0)
-      if event == "^C"
+      if event == "^D"
         break
       elsif event == ""
         redraw
-      elsif event == "BACKSPACE"
+      elsif event == "BACKSPACE" or event == "ESC"
         close
       elsif event == "ENTER"
         open
