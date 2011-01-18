@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+# Copyright 2009, 2010, 2011 Robert Lehmann
+
+begin
+  require 'tweetalano'
+rescue
+  require 'rubygems'
+  require 'tweetalano'
+end
+
+if __FILE__ == $0
+  if ARGV.include?"-h" or ARGV.include?"--help"
+    puts <<EOF
+twitsh [options]
+
+EOF
+  else
+    Tweetalano::App.new.main
+  end
+end

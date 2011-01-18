@@ -1,132 +1,16 @@
+#!/usr/bin/ruby -w
 # Copyright 2009, 2010, 2011 Robert Lehmann
 
 require 'rubygems'
+require 'tweetalano/layout'
+require 'tweetalano/widgets'
 require 'twitter'
 require 'oauth'
 require 'stfl'
 require 'xdg'
 require 'yaml'
-require 'launchy'
 
 module Tweetalano
-
-VERSION = "0.1"
-LAYOUT = <<EOF
-vbox
-  @.expand:0
-  
-* title bar
-  hbox[titlebar] .height:1 .border:b
-    @style_normal:fg=black,bg=cyan
-    label text:"tweetalano #{VERSION}" .expand:h
-    hbox[tray] tie:r
-* blink does NOT work on defocused terminals
-      label text:"@ " .display[replies?]:0
-        style_normal:fg=blue,bg=cyan,attr=blink
-      label text:"! " .display[direct?]:0
-        style_normal:fg=red,bg=cyan,attr=blink
-      label text:"<" .display[messages?]:0
-        style_normal:fg=black,bg=cyan,attr=dim
-  
-* timeline
-  list[tweets]
-    .expand:v modal:1 richtext:1
-    .display[tweets?]:1
-    pos[tweets_pos]:0
-    offset[tweets_offset]:
-    style_focus:bg=magenta,fg=yellow,attr=bold
-    style_selected:bg=magenta,fg=yellow,attr=bold
-    style_B_normal:attr=bold
-    style_B_selected:bg=magenta,attr=bold
-    style_B_focus:bg=magenta,attr=bold
-
-* message view
-  table @.border:t @.expand:h
-    textview[text] richtext:1
-      style_A_normal:fg=cyan,attr=underline
-      style_H_normal:fg=yellow
-      style_U_normal:fg=magenta,attr=dim
-      style_end:fg=black
-
-  vbox
-    list[links]
-      modal:1
-      pos[links_pos]:0
-      .display[links?]:0
-      style_focus:bg=blue,fg=yellow,attr=bold
-    hbox
-      label text[name]:""
-      label text:" — @"
-      label text[screenname]:"" style_normal:fg=white,attr=bold
-    hbox
-      .display[source?]:0
-      label text:"from "
-      label text[source]:
-    label text[published]:""
-
-  vbox
-    @style_normal:bg=white,fg=black
-    label text[help]:""
-
-* input shell, prompt
-  hbox
-    label text:"> " style_normal:attr=dim
-    input text[shell]: .expand:h modal:1
-EOF
-
-class Timeline < Array
-  def initialize app
-    @app = app
-  end
-  def clear
-    super
-    @app.stfl! :tweets_pos, 0
-    @width = 1
-    redraw
-  end
-  def redraw
-    @app.stfl! :tweets, "listitem", :replace_inner # clear
-    each do |tweet| show tweet end
-  end
-  def << tweet
-    push tweet
-    show tweet
-    if @width < tweet.user.screen_name.length
-      @width = tweet.user.screen_name.length
-      redraw
-    end
-  end
-  private
-  def show tweet
-    name = tweet.user.screen_name
-    name = name.ljust @width if @app.config['indent_names']
-    item = "listitem text:\"@<B>#{name}</> \"#{Stfl.quote(tweet.text)}"
-    @app.stfl! :tweets, item, :append
-  end
-end
-
-class Entities < Array
-  def initialize app
-    @app = app
-  end
-  def clear
-    super
-    @app.stfl! :links, "listitem", :replace_inner # clear
-  end
-  def << item
-    super item
-    @app.stfl! :links, "listitem text:#{Stfl.quote(item)}", :append
-  end
-  def run index
-    item = self[index]
-    if item.match /^@/
-      item.slice! 0
-      @app.load_timeline item
-    else
-      Launchy.open(item)
-    end
-  end
-end
 
 class App
   def initialize
@@ -254,9 +138,11 @@ class App
       elsif event == "BACKSPACE" or event == "ESC"
         close
       elsif event == "ENTER"
-        if stfl :links? == "0"
+        if (stfl :links?) == "0"
+          STDERR.puts "opening tweet"
           open
         else
+          STDERR.puts "running entity!"
           @entities.run((stfl :links_pos).to_i)
         end
       end
@@ -265,14 +151,3 @@ class App
 end #class
 
 end #module
-
-if __FILE__ == $0
-  if ARGV.include?"-h" or ARGV.include?"--help"
-    puts <<EOF
-twitsh [options]
-
-EOF
-  else
-    Tweetalano::App.new.main
-  end
-end
