@@ -19,6 +19,7 @@ class App
     @entities = Entities.new self
     configure!
     require 'tweetalano/mock'
+    #authorize!
   end
 
   def stfl!(component, value, modify=nil)
@@ -29,14 +30,14 @@ class App
   def focus(component) @form.set_focus component.to_s end
 
   def config() @config end
-  def configure;
+  def configure!;
     path = XDG::Config.find('tweetalano', 'config.yaml') \
       or fail("#{XDG::Config.home}/tweetalano/config.yaml not found")
     @config = YAML::load_file(path)
   end
 
-  def authorize;
-    fetch_oauth unless @config.has_key? 'oauth'
+  def authorize!;
+    fetch_oauth! unless @config.has_key? 'oauth'
     Twitter.configure do |config|
       config.consumer_key = @config['consumer']['key']
       config.consumer_secret = @config['consumer']['secret']
@@ -45,7 +46,7 @@ class App
     end
   end
 
-  def fetch_oauth;
+  def fetch_oauth!;
     consumer = OAuth::Consumer.new(
       @config['consumer']['key'], @config['consumer']['secret'], {
       :site => "http://twitter.com",
