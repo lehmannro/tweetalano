@@ -39,6 +39,8 @@ class App
   def authorize!;
     fetch_oauth! unless @config.has_key? 'oauth'
     Twitter.configure do |config|
+      # In this scenario, tweetalano is the consumer and the oauth belongs to
+      # the user.
       config.consumer_key = @config['consumer']['key']
       config.consumer_secret = @config['consumer']['secret']
       config.oauth_token = @config['oauth']['token']
