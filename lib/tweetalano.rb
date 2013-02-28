@@ -70,14 +70,19 @@ class App
     # count must be "less than or equal to 200."
     @timeline.clear
     options = {:include_rts => 1,
-               :include_entities => 1,
-               :count => 200}
+               :include_entities => 1,}
+               #:count => @config.fetch(:fetch_size, 200)}
     if user
-      timeline = Twitter.user_timeline(user, options)
+      tweets = Twitter.user_timeline(user, options)
     else
-      timeline = Twitter.home_timeline(options)
+      tweets = Twitter.home_timeline(options)
     end
-    timeline.each do |tweet|
+    show_many tweets
+  end
+
+  def show_many tweets
+    tweets.each do |tweet|
+      prepare tweet
       @timeline << tweet
     end
     @form.run(-1)
@@ -85,41 +90,72 @@ class App
     close
   end
 
-  def show_tweet tweet
-    stfl! :text, "listitem", :replace_inner
-    if tweet.text.include? "\n"
-      lines = tweet.text.split("\n")
-    else
-      width = stfl 'titlebar:w'
-      lines = tweet.text.scan(/(.{1,#{width}})(?:\s+|$)/).collect{|a| a[0]}
-    end
-    lines.each do |line|
-      stfl! :text, "listitem text:#{Stfl.quote(line.strip)}", :append
-    end
-    stfl! :screenname, tweet.user.screen_name
-    stfl! :name, tweet.user.name
-    stfl! :source, tweet.source.gsub(/^<a href="(.+?)" rel="nofollow">(.+)<\/a>$/, '\2 (\1)')
-    stfl! :published, tweet.created_at
+  def prepare tweet
+    inserts = Hash.new
+    tweet.refs = Array.new
+    insert = lambda { |obj, tag, url|
+      inserts[obj[:indices][0]] = [tag, obj[:indices][1]]
+      tweet.refs << url
+    }
 
-    @entities.clear
     tweet.entities.urls.each do |ref|
-      @entities << ref.url
+      insert.call ref, 'A', ref.url
     end
     tweet.entities.hashtags.each do |tag|
-      @entities << "##{tag.text}"
+      insert.call tag, 'H', "##{tag.text}"
     end
     tweet.entities.user_mentions.each do |mention|
-      @entities << "@#{mention.screen_name}"
+      insert.call mention, 'U', "@#{mention.screen_name}"
     end
+
+    text = tweet.text.unpack('U*')
+    inserts.sort.each_with_index do |(pos, (tag, endpos)), offset|
+      text.insert pos+offset*6, *"<#{tag}>".unpack('U*')
+      text.insert endpos+offset*6+3, *"</>".unpack('U*')
+    end
+
+    text = text.pack('U*')
+    text.gsub! /&lt;/, '\<'
+    text.gsub! /&gt;/, '\>'
+
+    tweet.highlighted = text
   end
+
+  def show tweet
+    @entities.replace tweet.refs
+
+    stfl! :screenname, tweet.user.screen_name
+    stfl! :name, tweet.user.name
+    stfl! :source, tweet.source.gsub(
+                      /^<a href="(.+?)" rel="nofollow">(.+)<\/a>$/, '\2 (\1)')
+    stfl! :published, tweet.created_at
+  end
+
   def redraw
-    show_tweet @timeline[(stfl :tweets_pos).to_i]
+    tweet = @timeline[(stfl :tweets_pos).to_i]
+    stfl! :text, "vbox", :replace_inner
+    text = tweet.highlighted
+    if text.include? "\n"
+      lines = text.split("\n")
+    else
+      lines = text.scan(/(.{1,#{stfl 'titlebar:w'}})(?:\s+|$)/).collect{|a| a[0]}
+    end
+    lines.reject! do |line| line.strip.empty? end
+
+    lines.each do |line|
+      stfl! :text, "label text:#{Stfl.quote(line.strip)}", :append
+    end
+    stfl! :padding, "vbox", :replace_inner
+    (140 / (stfl 'titlebar:w').to_i - lines.size + 1).times do
+      stfl! :padding, "label text:\"\"", :append
+    end
   end
 
   def open
     stfl! :help, "BACKSPACE:Close"
     stfl! :links?, 1
     stfl! :source?, 1
+    stfl! :padded?, 0
     @form.run(-1)
     focus :links
   end
@@ -127,24 +163,26 @@ class App
     stfl! :help, "ENTER:Open"
     stfl! :links?, 0
     stfl! :source?, 0
+    stfl! :padded?, 1
     focus :tweets
   end
 
   def main
+    @form.run(-1)
+    load_timeline
     loop do
       event = @form.run(0)
       if event == "^D"
         break
       elsif event == ""
+        show @timeline[(stfl :tweets_pos).to_i]
         redraw
       elsif event == "BACKSPACE" or event == "ESC"
         close
       elsif event == "ENTER"
         if (stfl :links?) == "0"
-          STDERR.puts "opening tweet"
           open
         else
-          STDERR.puts "running entity!"
           @entities.run((stfl :links_pos).to_i)
         end
       end

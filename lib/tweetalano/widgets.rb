@@ -21,7 +21,7 @@ class Timeline < Array
   def << tweet
     push tweet
     show tweet
-    if @width < tweet.user.screen_name.length
+    if @width < tweet.user.screen_name.length and @app.config['indent_names']
       @width = tweet.user.screen_name.length
       redraw
     end
@@ -29,8 +29,9 @@ class Timeline < Array
   private
   def show tweet
     name = tweet.user.screen_name
-    name = name.ljust @width if @app.config['indent_names']
-    item = "listitem text:\"@<B>#{name}</> \"#{Stfl.quote(tweet.text)}"
+    name = name.ljust @width
+    label = "@<B>#{name}</> #{tweet.highlighted}"
+    item = "listitem text:#{Stfl.quote(label)}"
     @app.stfl! :tweets, item, :append
   end
 end
@@ -48,16 +49,17 @@ class Entities < Array
     @app.stfl! :links, "listitem text:#{Stfl.quote(item)}", :append
   end
   def run index
-    item = self[index]
-    STDERR.puts item.dump
+    item = self[index] || return
     if item.match /^@/
-      STDERR.puts "timeline"
       item.slice! 0
       @app.load_timeline item
     else
-      STDERR.puts "launchy"
       Launchy.open(item)
     end
+  end
+  def replace ary
+    clear
+    ary.each do |item| self << item end
   end
 end
 
