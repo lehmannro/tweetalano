@@ -32,14 +32,24 @@ vbox
     style_B_normal:attr=bold
     style_B_selected:bg=magenta,attr=bold
     style_B_focus:bg=magenta,attr=bold
+    style_A_normal:fg=cyan,attr=underline
+    style_H_normal:fg=yellow
+    style_U_normal:fg=magenta,attr=dim
+    style_A_selected:fg=cyan,bg=magenta,attr=underline
+    style_H_selected:fg=yellow,bg=magenta
+    style_U_selected:fg=white,bg=magenta,attr=dim
+    style_A_focus:fg=cyan,bg=magenta,attr=underline
+    style_H_focus:fg=yellow,bg=magenta
+    style_U_focus:fg=white,bg=magenta,attr=dim
 
 * message view
   table @.border:t @.expand:h
-    textview[text] richtext:1
-      style_A_normal:fg=cyan,attr=underline
-      style_H_normal:fg=yellow
-      style_U_normal:fg=magenta,attr=dim
-      style_end:fg=black
+    vbox[text] .expand:h @richtext:1
+      @style_A_normal:fg=cyan,attr=underline
+      @style_H_normal:fg=yellow
+      @style_U_normal:fg=magenta,attr=dim
+  vbox[padding] .display[padded?]:1
+  label text:" "
 
   vbox
     list[links]
