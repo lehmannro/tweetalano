@@ -31,7 +31,7 @@ class App
 
   def config() @config end
   def configure!;
-    path = XDG::Config.find('tweetalano', 'config.yaml') \
+    path = XDG['CONFIG'].find('tweetalano', 'config.yaml') \
       or fail("#{XDG::Config.home}/tweetalano/config.yaml not found")
     @config = YAML::load_file(path)
   end
