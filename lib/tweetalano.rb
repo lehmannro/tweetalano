@@ -17,9 +17,8 @@ class App
     @form = Stfl.create LAYOUT
     @timeline = Timeline.new self
     @entities = Entities.new self
-    configure
-    authorize
-    load_timeline
+    configure!
+    require 'tweetalano/mock'
   end
 
   def stfl!(component, value, modify=nil)
